@@ -1,0 +1,2 @@
+:root { --bg:#090b12; --sidebar:#0c0f17; --panel:#131722; --panel-2:#171c29; --line:#272d3d; --text:#f2f4fb; --muted:#9299aa; --dim:#626a7d; --purple:#9485ff; --mint:#5fe2b7; --amber:#f7bc62; --blue:#62b6ff; --danger:#ff7d8d; --radius:16px; --shadow:0 12px 36px rgba(0,0,0,.22); }
+* { box-sizing:border-box; }
