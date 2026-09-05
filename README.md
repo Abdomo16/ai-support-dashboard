@@ -4,13 +4,15 @@ A real browser-native, bilingual SaaS dashboard for AI support operations. Devel
 
 ## Run locally
 
-This project uses the supplied workspace Node runtime and reads its public Supabase settings from `.env`. From the project root, run:
+This project uses the supplied workspace Node runtime and optionally reads its public Supabase settings from `.env`. From the project root, run:
 
 ```powershell
 & 'C:\Users\abdoa\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' server.mjs
 ```
 
 Then open [http://127.0.0.1:4173](http://127.0.0.1:4173) in Chrome.
+
+The app also starts without `.env`; data-backed panels then show their safe preview or unavailable states.
 
 ## Supabase
 

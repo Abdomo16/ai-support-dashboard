@@ -4,9 +4,10 @@ import { extname, join, normalize } from 'node:path';
 
 const root = process.cwd();
 const environment = Object.fromEntries(
-  readFileSync(join(root, '.env'), 'utf8')
+  (existsSync(join(root, '.env')) ? readFileSync(join(root, '.env'), 'utf8') : '')
     .split(/\r?\n/)
     .filter((line) => line && !line.trimStart().startsWith('#'))
+    .filter((line) => line.includes('='))
     .map((line) => {
       const index = line.indexOf('=');
       return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
