@@ -23,6 +23,17 @@ button,input { font:inherit; } button { cursor:pointer; } .app-shell{min-height:
 .ai-badge{font-size:9px;font-weight:700;color:var(--purple);background:rgba(148,133,255,.12);padding:3px 6px;border-radius:5px}
 .status.open{color:var(--blue);background:rgba(98,182,255,.1)}
 .status.resolved{color:var(--mint);background:rgba(95,226,183,.1)}
+.status.confirmed{color:var(--blue);background:rgba(98,182,255,.1)}
+.status.completed{color:var(--mint);background:rgba(95,226,183,.1)}
+.status.cancelled,.status.no_show{color:var(--danger);background:rgba(255,125,141,.1)}
+.status.rescheduled{color:var(--amber);background:rgba(247,188,98,.1)}
+
+/* Bookings */
+.booking-list{padding:0 20px 16px;max-height:calc(100vh - 260px);overflow:auto}
+.booking-list .booking-row{cursor:pointer;transition:background .12s}
+.booking-list .booking-row:not(.booking-header):hover{background:#171c29}
+.booking-list .booking-row span:nth-child(3){color:var(--muted)}
+.booking-list .booking-row span:last-child{justify-self:start}
 
 /* Customers */
 .customer-table{padding:0 20px 16px}

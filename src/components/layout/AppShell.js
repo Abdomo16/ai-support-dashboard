@@ -1,8 +1,8 @@
-const icons = { overview: '⌂', conversations: '◫', agents: '✦', customers: '◉', knowledge: '▤', analytics: '◔', automations: '↗', integrations: '⌘', settings: '⚙' };
+const icons = { overview: '⌂', conversations: '◫', bookings: '◷', customers: '◉', knowledge: '▤', analytics: '◔', automations: '↗', integrations: '⌘', settings: '⚙' };
 
 export function appShell({ locale, active, content, isArabic }) {
   const t = (key) => locale[key];
-  const nav = ['overview', 'conversations', 'agents', 'customers', 'knowledge', 'analytics', 'automations', 'integrations', 'settings'];
+  const nav = ['overview', 'conversations', 'bookings', 'customers', 'knowledge', 'analytics', 'automations', 'integrations', 'settings'];
   return `
     <div class="app-shell">
       <aside class="sidebar">

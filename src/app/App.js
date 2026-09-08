@@ -3,6 +3,7 @@ import { copy } from '../i18n/translations.js';
 import { overview, loadBookings, loadDashboardSummary } from '../features/dashboard/Overview.js';
 import { conversationsPage, loadConversations } from '../features/conversations/Conversations.js';
 import { customersPage, loadCustomers } from '../features/customers/Customers.js';
+import { bookingsPage, loadBookingsPage } from '../features/bookings/Bookings.js';
 import { knowledgeBasePage, loadKnowledgeBase } from '../features/knowledge-base/KnowledgeBase.js';
 import { analyticsPage, loadAnalytics } from '../features/analytics/Analytics.js';
 
@@ -16,6 +17,7 @@ export function createApp(root) {
     openConversation: (id) => toast(`${state.locale === 'ar' ? 'فتح محادثة' : 'Open conversation'} ${id.slice(0, 8)}…`),
     openCustomer: (id) => toast(`${state.locale === 'ar' ? 'فتح عميل' : 'Open customer'} ${id.slice(0, 8)}…`),
     openArticle: (id) => toast(`${state.locale === 'ar' ? 'فتح مقالة' : 'Open article'} ${id.slice(0, 8)}…`),
+    openBooking: (id) => toast(`${state.locale === 'ar' ? 'فتح حجز' : 'Open booking'} ${id.slice(0, 8)}…`),
   };
 
   const render = () => {
@@ -36,6 +38,7 @@ function buildContent(t, route) {
     case 'overview': return overview(t);
     case 'conversations': return conversationsPage(t);
     case 'customers': return customersPage(t);
+    case 'bookings': return bookingsPage(t);
     case 'knowledge': return knowledgeBasePage(t);
     case 'analytics': return analyticsPage(t);
     default: return emptyState(t, route);
@@ -53,6 +56,9 @@ function loadRouteData(root, t, route, handlers) {
       break;
     case 'customers':
       loadCustomers(root, t, handlers);
+      break;
+    case 'bookings':
+      loadBookingsPage(root, t, handlers);
       break;
     case 'knowledge':
       loadKnowledgeBase(root, t, handlers);
