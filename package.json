@@ -3,7 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "build": "node scripts/build-pages.mjs"
+    "build": "node scripts/build-pages.mjs",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "engines": {
     "node": ">=20"
