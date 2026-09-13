@@ -1,4 +1,7 @@
-import { supabaseConfig } from '/runtime-config.js';
+export const supabaseConfig = globalThis.__SUPABASE_CONFIG__ || {
+  url: '',
+  publishableKey: '',
+};
 
 export async function query(table, query = '') {
   if (!supabaseConfig.url || !supabaseConfig.publishableKey) throw new Error('Supabase is not configured.');

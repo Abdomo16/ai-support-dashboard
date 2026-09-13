@@ -4,7 +4,7 @@ export function onRequestGet(context) {
     publishableKey: context.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
   };
 
-  return new Response(`export const supabaseConfig = ${JSON.stringify(config)};`, {
+  return new Response(`globalThis.__SUPABASE_CONFIG__ = ${JSON.stringify(config)};`, {
     headers: {
       'Cache-Control': 'no-store',
       'Content-Type': 'text/javascript; charset=utf-8',
