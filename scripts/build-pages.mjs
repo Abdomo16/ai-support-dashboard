@@ -16,6 +16,7 @@ const copy = async (relativePath) => {
 
 await copy('index.html');
 await copy('src/main.js');
+await copy('functions/runtime-config.js');
 
 const copyDirectory = async (relativePath) => {
   const sourceDirectory = join(root, relativePath);
