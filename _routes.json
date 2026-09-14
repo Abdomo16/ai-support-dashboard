@@ -1,9 +1,0 @@
-{
-  "version": 1,
-  "include": [
-    "/runtime-config.js"
-  ],
-  "exclude": [
-    "/*"
-  ]
-}

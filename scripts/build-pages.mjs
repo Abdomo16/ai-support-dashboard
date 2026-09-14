@@ -9,16 +9,14 @@ await mkdir(output, { recursive: true });
 
 const copy = async (relativePath) => {
   const source = join(root, relativePath);
-  const destination = relativePath === 'functions/runtime-config.js'
-    ? join(output, 'runtime-config.js')
-    : join(output, relativePath);
+  const destination = join(output, relativePath);
   await mkdir(join(destination, '..'), { recursive: true });
   await copyFile(source, destination);
 };
 
 await copy('index.html');
 await copy('src/main.js');
-await copy('functions/runtime-config.js');
+await copy('runtime-config.js');
 
 const copyDirectory = async (relativePath) => {
   const sourceDirectory = join(root, relativePath);
