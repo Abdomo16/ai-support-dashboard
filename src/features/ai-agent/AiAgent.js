@@ -11,7 +11,19 @@ import { healthPanel } from '../dashboard/Overview.js';
 const tabs = ['settings', 'rules', 'playground', 'quality'];
 const tones = ['friendly', 'professional', 'concise', 'warm', 'playful'];
 const dialects = ['auto', 'gulf', 'egyptian', 'levantine', 'maghrebi', 'msa'];
-const models = ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'];
+// OpenRouter model ids used by the n8n WhatsApp workflow; prices are USD per 1M tokens (input / output).
+export const DEFAULT_MODEL = 'deepseek/deepseek-v4-flash';
+const models = [
+  ['deepseek/deepseek-v4-flash', 'DeepSeek V4 Flash — $0.03 / $1.28 (recommended)'],
+  ['deepseek/deepseek-v4.1-flash', 'DeepSeek V4.1 Flash — $0.05 / $1.20'],
+  ['deepseek/deepseek-v4-pro', 'DeepSeek V4 Pro — $0.21 / $0.42'],
+  ['deepseek/deepseek-v3.2', 'DeepSeek V3.2 — $0.28 / $0.42'],
+  ['qwen/qwen3.7-flash', 'Qwen 3.7 Flash — $0.03 / $0.13'],
+  ['openai/gpt-6-luna', 'GPT-6 Luna — $0.10 / $0.50'],
+  ['google/gemini-2.5-flash-lite', 'Gemini 2.5 Flash Lite — $0.10 / $0.40'],
+  ['google/gemini-3.8-flash', 'Gemini 3.8 Flash — $0.75 / $3.75'],
+  ['anthropic/claude-haiku-4.5', 'Claude Haiku 4.5 — $1.00 / $5.00'],
+];
 const toolKeys = ['bookings', 'orders', 'payments', 'handoff'];
 let playgroundHistory = [];
 
@@ -73,7 +85,7 @@ function mountSettings(body, ctx, settings) {
     { name: 'tone', label: t.tone, type: 'select', value: settings.tone, options: tones.map((tone) => [tone, t[`tone_${tone}`] || tone]) },
     { name: 'languages', label: t.languages, type: 'tags', value: settings.languages || ['ar', 'en'], hint: t.languagesHint },
     { name: 'dialect', label: t.arabicDialect, type: 'select', value: settings.dialect, options: dialects.map((dialect) => [dialect, t[`dialect_${dialect}`] || dialect]) },
-    { name: 'model', label: t.aiModel, type: 'select', value: settings.model, options: models.map((model) => [model, model]) },
+    { name: 'model', label: t.aiModel, type: 'select', value: models.some(([id]) => id === settings.model) ? settings.model : DEFAULT_MODEL, options: models, hint: t.aiModelHint },
     { name: 'temperature', label: t.creativity, type: 'number', min: 0, max: 1, step: 0.1, value: settings.temperature ?? 0.3 },
     { name: 'system_prompt', label: t.systemPrompt, type: 'textarea', rows: 7, value: settings.system_prompt, placeholder: t.systemPromptPlaceholder },
     { name: 'fallback_message', label: t.fallbackMessage, type: 'textarea', rows: 2, value: settings.fallback_message, hint: t.fallbackHint },

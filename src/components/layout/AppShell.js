@@ -1,5 +1,6 @@
 import { esc, initials } from '../../lib/html.js';
 import { href } from '../../lib/router.js';
+import { themeButton } from '../../lib/theme.js';
 import { navGroups, routes } from '../../app/routes.js';
 import { can, isImpersonating, workspace } from '../../services/workspace.js';
 
@@ -53,6 +54,7 @@ export function appShell(t, { isArabic }) {
               <button class="icon-btn" type="button" data-toggle aria-label="${esc(t.notifications)}">◎<b class="dot-badge" hidden></b></button>
               <div class="dropdown-menu notifications-menu" hidden></div>
             </div>
+            ${themeButton(t)}
             <button class="language" id="language-toggle" type="button">${isArabic ? 'EN' : 'ع'}</button>
             ${can('agent') ? `<div class="dropdown" id="create-menu">
               <button class="create" id="create-button" type="button" data-toggle>＋ ${esc(t.create)}</button>

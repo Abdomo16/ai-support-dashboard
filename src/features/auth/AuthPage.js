@@ -1,4 +1,5 @@
 import { esc } from '../../lib/html.js';
+import { themeButton, wireThemeButton } from '../../lib/theme.js';
 import { resetPassword, signInWithGoogle, signInWithMagicLink, signInWithPassword, signUp, updatePassword } from '../../services/supabaseClient.js';
 
 export function renderAuth(t, mode = 'signin') {
@@ -24,7 +25,7 @@ export function renderAuth(t, mode = 'signin') {
           ${mode !== 'signin' ? `<button type="button" class="link" data-mode="signin">${esc(t.haveAccount)}</button>` : `<button type="button" class="link" data-mode="signup">${esc(t.noAccount)}</button><button type="button" class="link" data-mode="reset">${esc(t.forgotPassword)}</button>`}
         </div>
       </form>
-      <button class="language auth-language" id="language-toggle">${esc(t.switchLanguage)}</button>
+      <div class="auth-language">${themeButton(t)}<button class="language" id="language-toggle" type="button">${esc(t.switchLanguage)}</button></div>
     </div>`;
 }
 
@@ -36,6 +37,7 @@ export function mountAuth(root, t, { onSignedIn, onModeChange, onLocale }) {
   root.querySelectorAll('button[data-mode]').forEach((button) => button.addEventListener('click', () => onModeChange(button.dataset.mode)));
   root.querySelector('#google-signin')?.addEventListener('click', signInWithGoogle);
   root.querySelector('#language-toggle')?.addEventListener('click', onLocale);
+  wireThemeButton(root.querySelector('#theme-toggle'), t);
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(form));

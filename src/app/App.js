@@ -6,6 +6,7 @@ import { go, href, parseRoute } from '../lib/router.js';
 import { setFormatLocale, timeAgo } from '../lib/format.js';
 import { browserNotify, playChime } from '../lib/notify.js';
 import { openModal, setUiLabels, toast, toastError } from '../lib/ui.js';
+import { wireThemeButton } from '../lib/theme.js';
 import { renderAuth, mountAuth } from '../features/auth/AuthPage.js';
 import { renderCreateWorkspace, mountCreateWorkspace } from '../features/onboarding/CreateWorkspace.js';
 import { consumeAuthRedirect, getSession, isConfigured, signOut, subscribe } from '../services/supabaseClient.js';
@@ -115,6 +116,7 @@ function mountShell() {
   state.shellMounted = true;
   wireDropdowns(root);
   root.querySelector('#language-toggle').addEventListener('click', toggleLocale);
+  wireThemeButton(root.querySelector('#theme-toggle'), dictionary);
   root.querySelector('#mobile-menu').addEventListener('click', () => root.querySelector('#sidebar').classList.toggle('open'));
   root.querySelector('#sidebar').addEventListener('click', (event) => { if (event.target.closest('.nav-item')) root.querySelector('#sidebar').classList.remove('open'); });
   root.querySelectorAll('[data-org]').forEach((button) => button.addEventListener('click', async () => {
