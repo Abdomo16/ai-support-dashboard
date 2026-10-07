@@ -1,8 +1,9 @@
 import { esc } from '../../lib/html.js';
 import { href } from '../../lib/router.js';
 import { formatDateTime, timeAgo } from '../../lib/format.js';
-import { confirmDialog, emptyRow, loadingRow, openModal, toast, toastError } from '../../lib/ui.js';
+import { confirmDialog, emptyRow, field, loadingRow, openModal, toast, toastError } from '../../lib/ui.js';
 import {
+  WHATSAPP_PROVIDERS, connectWhatsAppProvider, disconnectWhatsAppProvider, whatsappInboundUrl,
   connectIntegration, connectWhatsAppManual, disconnectIntegration, disconnectWhatsAppAccount, listIntegrations, listWhatsAppAccounts,
   publicApiUrl, runEmbeddedSignup, sendTestEvent, setDefaultPayment, startGoogleOAuth, whatsappConfig,
 } from '../../services/integrations.js';
@@ -114,6 +115,7 @@ export async function mount(root, ctx) {
         </div>`).join('') : emptyRow(t.noWhatsAppNumber)}</div>
       <details class="webhook-details"><summary>${esc(t.webhookSetup)}</summary><div id="wa-config">${loadingRow(t.loading)}</div></details>
     </section>`}
+    ${providerPanel(accounts.filter((account) => account.provider !== 'meta' && account.status === 'connected' && !(account.provider === 'waha' && account.config?.base_url === 'http://waha:3000')), t)}
     ${['scheduling', 'commerce', 'payments', 'data'].map((group) => `
       <h2 class="section-title">${esc(t[`integrationGroup_${group}`])}</h2>
       <section class="integration-grid">
@@ -151,10 +153,17 @@ export async function mount(root, ctx) {
     onSubmit: async (values) => { await connectWhatsAppManual(values); toast(t.whatsappConnected, 'success'); ctx.refresh(); },
   }));
 
+  body.querySelector('#wa-provider')?.addEventListener('click', () => openProviderConnect(t, () => ctx.refresh()));
+
   body.addEventListener('click', async (event) => {
-    const target = event.target.closest('[data-configure],[data-disconnect],[data-default],[data-test],[data-wa-disconnect]');
+    const target = event.target.closest('[data-configure],[data-disconnect],[data-default],[data-test],[data-wa-disconnect],[data-wa-webhook],[data-wa-remove]');
     if (!target) return;
     try {
+      if (target.dataset.waWebhook) showInboundUrl(t, await whatsappInboundUrl(target.dataset.waWebhook));
+      if (target.dataset.waRemove && await confirmDialog(t.disconnectWhatsAppConfirm)) {
+        await disconnectWhatsAppProvider(target.dataset.waRemove);
+        ctx.refresh();
+      }
       if (target.dataset.waDisconnect && await confirmDialog(t.disconnectWhatsAppConfirm)) {
         await disconnectWhatsAppAccount(target.dataset.waDisconnect);
         ctx.refresh();
@@ -181,6 +190,71 @@ export async function mount(root, ctx) {
     else if (latest) body.querySelector('.whatsapp-panel').outerHTML = wahaPanel(latest.filter((account) => account.provider === 'waha'), t);
   }, 15000);
   return () => clearInterval(poll);
+}
+
+function providerPanel(accounts, t) {
+  return `
+    <section class="panel">
+      <div class="panel-head"><div><h2>${esc(t.otherWhatsAppProviders)}</h2><p>${esc(t.otherWhatsAppProvidersHelp)}</p></div>
+        <div class="heading-actions"><button class="ghost-btn" id="wa-provider">＋ ${esc(t.connectProvider)}</button></div></div>
+      <div class="simple-list">${accounts.map((account) => `
+        <div class="list-row">
+          <div><strong>${esc(account.display_phone || account.phone_number_id)}${account.verified_name ? ` · ${esc(account.verified_name)}` : ''} <span class="tag">${esc(t[`waProvider_${account.provider}`] || account.provider)}</span></strong>
+            <small>${esc(account.last_webhook_at ? `${t.lastMessage} ${timeAgo(account.last_webhook_at)}` : t.noWebhookYet)}</small></div>
+          <div class="row-actions"><button class="ghost-btn" data-wa-webhook="${account.id}">${esc(t.inboundWebhookUrl)}</button><button class="ghost-btn danger-text" data-wa-remove="${account.id}">${esc(t.disconnect)}</button></div>
+        </div>`).join('') || emptyRow(t.noOtherProviders)}</div>
+    </section>`;
+}
+
+const PROVIDER_FIELDS = {
+  '360dialog': (t) => [{ name: 'api_key', label: t.apiKey, type: 'password', required: true, full: true }],
+  twilio: (t) => [
+    { name: 'account_sid', label: 'Account SID', required: true },
+    { name: 'auth_token', label: 'Auth token', type: 'password', required: true },
+    { name: 'from', label: t.twilioFrom, required: true, placeholder: '+14155238886' },
+  ],
+  ultramsg: (t) => [
+    { name: 'instance_id', label: t.instanceId, required: true, placeholder: 'instance12345' },
+    { name: 'token', label: t.apiToken, type: 'password', required: true },
+  ],
+  waha: (t) => [
+    { name: 'base_url', label: t.serverUrl, type: 'url', required: true, placeholder: 'https://waha.example.com' },
+    { name: 'session', label: t.sessionName, required: true, value: 'default' },
+    { name: 'api_key', label: t.apiKey, type: 'password', required: true },
+  ],
+};
+
+function openProviderConnect(t, onSaved) {
+  openModal({
+    title: t.connectProvider,
+    wide: true,
+    html: `<p class="muted-text">${esc(t.connectProviderHelp)}</p><div class="form-grid" id="provider-fields"></div>`,
+    fields: [
+      { name: 'provider', label: t.provider, type: 'select', value: '360dialog', options: WHATSAPP_PROVIDERS.map((provider) => [provider, t[`waProvider_${provider}`] || provider]) },
+      { name: 'display_phone', label: t.whatsappNumber, required: true, placeholder: '+201001234567' },
+      { name: 'name', label: t.businessName },
+    ],
+    submitLabel: t.connect,
+    onMount: (form) => {
+      const draw = () => { form.querySelector('#provider-fields').innerHTML = PROVIDER_FIELDS[form.querySelector('[name="provider"]').value](t).map(field).join(''); };
+      form.querySelector('[name="provider"]').addEventListener('change', draw);
+      draw();
+    },
+    onSubmit: async (values) => {
+      const accountId = await connectWhatsAppProvider(values);
+      toast(t.whatsappConnected, 'success');
+      onSaved();
+      showInboundUrl(t, await whatsappInboundUrl(accountId));
+    },
+  });
+}
+
+function showInboundUrl(t, url) {
+  openModal({
+    title: t.inboundWebhookUrl,
+    hideSubmit: true,
+    html: `<p class="muted-text">${esc(t.inboundWebhookHelp)}</p><code class="mono small-text block">${esc(url)}</code><p class="muted-text small-text">${esc(t.inboundWebhookDeployNote)}</p>`,
+  });
 }
 
 function wahaPanel(accounts, t) {

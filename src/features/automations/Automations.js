@@ -1,7 +1,7 @@
 import { esc, options } from '../../lib/html.js';
 import { timeAgo } from '../../lib/format.js';
 import { confirmDialog, emptyRow, field, loadingRow, openModal, toast, toastError } from '../../lib/ui.js';
-import { ACTIONS, RECIPES, TRIGGERS, deleteAutomation, listAutomations, listRuns, saveAutomation } from '../../services/automations.js';
+import { ACTIONS, RECIPES, TRIGGERS, deleteAutomation, listAutomations, listRuns, listScheduledTasks, saveAutomation } from '../../services/automations.js';
 import { listServices } from '../../services/bookings.js';
 import { getTemplates, templateVariableCount } from '../../services/templates.js';
 import { can } from '../../services/workspace.js';
@@ -13,7 +13,21 @@ export function render({ t }) {
       ${can('admin') ? `<div class="heading-actions"><button class="create" id="new-automation">＋ ${esc(t.newAutomation)}</button></div>` : ''}
     </div>
     ${can('admin') ? `<section class="recipe-grid">${RECIPES.map((recipe) => `<button class="recipe-card" data-recipe="${recipe.key}"><strong>${esc(t[`recipe_${recipe.key}`])}</strong><small>${esc(t[`recipe_${recipe.key}_desc`])}</small></button>`).join('')}</section>` : ''}
-    <article class="panel table-panel"><div class="simple-list" id="automation-list">${loadingRow(t.loading)}</div></article>`;
+    <article class="panel table-panel"><div class="simple-list" id="automation-list">${loadingRow(t.loading)}</div></article>
+    <div id="scheduled-tasks"></div>`;
+}
+
+async function renderScheduledTasks(root, t) {
+  const jobs = await listScheduledTasks().catch(() => []);
+  if (!jobs.length) return;
+  const statusClass = { success: 'resolved', error: 'cancelled', running: 'scheduled' };
+  root.querySelector('#scheduled-tasks').innerHTML = `
+    <h2 class="section-title">${esc(t.scheduledTasks)}</h2>
+    <article class="panel table-panel"><p class="muted-text">${esc(t.scheduledTasksHelp)}</p><div class="simple-list">${jobs.map((job) => `
+      <div class="list-row"><div><strong>${esc(job.name)}</strong><small>${esc(job.description || '')}${job.schedule_text ? ` · ${esc(job.schedule_text)}` : ''}</small>
+        <small>${job.last_run_at ? `${esc(t.lastRun)} ${esc(timeAgo(job.last_run_at))}` : esc(t.notRunYet)}</small></div>
+        <div class="row-actions">${job.last_status ? `<span class="status ${statusClass[job.last_status] || 'pending'}">${esc(t[`taskStatus_${job.last_status}`] || job.last_status)}</span>` : ''}<span class="status ${job.enabled ? 'resolved' : 'pending'}">${esc(job.enabled ? t.active : t.inactive)}</span></div>
+      </div>`).join('')}</div></article>`;
 }
 
 const describeActions = (t, actions) => (actions || []).map((action) => t[`action_${action.type}`] || action.type).join(' → ');
@@ -23,6 +37,7 @@ export async function mount(root, ctx) {
   const list = root.querySelector('#automation-list');
   let automations = [];
   root.querySelector('#new-automation')?.addEventListener('click', () => create(ctx));
+  renderScheduledTasks(root, t);
   root.querySelectorAll('[data-recipe]').forEach((button) => button.addEventListener('click', () => {
     const recipe = RECIPES.find((item) => item.key === button.dataset.recipe);
     openAutomationForm(t, { name: t[`recipe_${recipe.key}`], trigger: recipe.trigger, delay_minutes: recipe.delay_minutes, actions: structuredClone(recipe.actions), conditions: {} }, () => ctx.refresh());

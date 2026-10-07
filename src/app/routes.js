@@ -6,6 +6,7 @@ import * as bookings from '../features/bookings/Bookings.js';
 import * as orders from '../features/orders/Orders.js';
 import * as aiAgent from '../features/ai-agent/AiAgent.js';
 import * as knowledge from '../features/knowledge-base/KnowledgeBase.js';
+import * as dataSources from '../features/data-sources/DataSources.js';
 import * as broadcasts from '../features/broadcasts/Broadcasts.js';
 import * as automations from '../features/automations/Automations.js';
 import * as analytics from '../features/analytics/Analytics.js';
@@ -26,6 +27,7 @@ export const routes = {
   orders: { module: orders, icon: '▣', group: 'support' },
   ai: { module: aiAgent, icon: '✦', group: 'aiGroup', label: 'aiAgent' },
   knowledge: { module: knowledge, icon: '▤', group: 'aiGroup' },
+  data: { module: dataSources, icon: '⛁', group: 'aiGroup', label: 'dataSources' },
   broadcasts: { module: broadcasts, icon: '➚', group: 'growth' },
   automations: { module: automations, icon: '↻', group: 'growth' },
   analytics: { module: analytics, icon: '◔', group: 'growth' },
@@ -35,3 +37,11 @@ export const routes = {
   onboarding: { module: onboarding, hidden: true },
   admin: { module: admin, icon: '♛', group: 'platform', platformAdmin: true, label: 'adminConsole' },
 };
+
+// Platform admins switch pages per workspace with organizations.features: { "<route>": false } hides a page,
+// and routes declaring `feature` only appear when features[feature] === true.
+export const TOGGLEABLE_ROUTES = ['bookings', 'orders', 'knowledge', 'data', 'broadcasts', 'automations', 'analytics'];
+export function routeEnabled(key, definition, features = {}) {
+  if (features?.[key] === false) return false;
+  return !definition.feature || features?.[definition.feature] === true;
+}

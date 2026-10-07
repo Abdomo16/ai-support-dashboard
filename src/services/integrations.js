@@ -4,16 +4,32 @@ import { orgId } from './workspace.js';
 export const listIntegrations = () => query('integrations', `select=*&org_id=eq.${orgId()}`);
 export const listWhatsAppAccounts = () => query('whatsapp_accounts', `select=*&org_id=eq.${orgId()}&order=created_at`);
 
+export const WHATSAPP_PROVIDERS = ['360dialog', 'twilio', 'ultramsg', 'waha'];
+
+// 'waha' means "text-only, queued for the n8n outbox" and covers every non-Meta provider.
 const providerCache = new Map();
 export async function whatsappProvider() {
   const id = orgId();
   if (!providerCache.has(id)) {
-    providerCache.set(id, query('whatsapp_accounts', `select=provider&org_id=eq.${id}&provider=eq.waha&limit=1`)
+    providerCache.set(id, query('whatsapp_accounts', `select=provider&org_id=eq.${id}&provider=neq.meta&status=eq.connected&limit=1`)
       .then((rows) => (rows.length ? 'waha' : 'meta'))
       .catch(() => { providerCache.delete(id); return 'meta'; }));
   }
   return providerCache.get(id);
 }
+
+export async function connectWhatsAppProvider({ provider, display_phone, name, ...fields }) {
+  const secretKeys = { '360dialog': ['api_key'], twilio: ['account_sid', 'auth_token'], ultramsg: ['token'], waha: ['api_key'] }[provider] || [];
+  const secret = Object.fromEntries(secretKeys.map((key) => [key, fields[key]]));
+  const config = Object.fromEntries(Object.entries(fields).filter(([key, value]) => !secretKeys.includes(key) && value));
+  providerCache.delete(orgId());
+  return db.rpc('connect_whatsapp_account', { p_org: orgId(), p_provider: provider, p_display_phone: display_phone, p_config: { ...config, name }, p_secret: secret });
+}
+export async function whatsappInboundUrl(accountId) {
+  const key = await db.rpc('whatsapp_webhook_secret', { p_account: accountId });
+  return `${supabaseConfig.url}/functions/v1/whatsapp-inbound?account=${accountId}&key=${key}`;
+}
+export const disconnectWhatsAppProvider = (accountId) => { providerCache.delete(orgId()); return db.rpc('disconnect_whatsapp_account', { p_account: accountId }); };
 
 export const connectIntegration = (provider, { config = {}, secret = {} } = {}) => invokeFunction('integrations', { org_id: orgId(), action: 'connect', provider, config, secret });
 export const disconnectIntegration = (provider) => db.rpc('disconnect_integration', { p_org: orgId(), p_provider: provider });

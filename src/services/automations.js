@@ -15,6 +15,9 @@ export async function saveAutomation({ id, ...values }) {
 
 export const deleteAutomation = (id) => db.remove('automations', `id=eq.${id}`);
 
+// Custom n8n jobs built for this workspace by the platform team (read-only for the workspace).
+export const listScheduledTasks = () => query('automation_jobs', `select=*&org_id=eq.${orgId()}&order=name`);
+
 export const RECIPES = [
   { key: 'review', trigger: 'booking_completed', delay_minutes: 120, actions: [{ type: 'send_template', template_id: '', variables: ['{first_name}'] }, { type: 'add_tag', tag: 'review-requested' }] },
   { key: 'followUp', trigger: 'no_reply_24h', delay_minutes: 0, actions: [{ type: 'send_template', template_id: '', variables: ['{first_name}'] }] },

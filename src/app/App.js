@@ -1,6 +1,6 @@
 import { appShell, wireDropdowns } from '../components/layout/AppShell.js';
 import { copy, translator } from '../i18n/translations.js';
-import { routes } from './routes.js';
+import { routeEnabled, routes } from './routes.js';
 import { esc } from '../lib/html.js';
 import { go, href, parseRoute } from '../lib/router.js';
 import { setFormatLocale, timeAgo } from '../lib/format.js';
@@ -257,7 +257,7 @@ async function renderRoute() {
   const view = document.createElement('div');
   view.className = 'page-view';
   page.replaceChildren(view);
-  if (!definition || (definition.platformAdmin && !workspace.isPlatformAdmin)) {
+  if (!definition || (definition.platformAdmin && !workspace.isPlatformAdmin) || (!definition.platformAdmin && !routeEnabled(route, definition, workspace.org?.features))) {
     view.innerHTML = `<div class="empty-state"><div class="empty-orb">?</div><h1>${esc(dictionary.notFound)}</h1><a class="create" href="#/overview">${esc(dictionary.overview)}</a></div>`;
     return;
   }

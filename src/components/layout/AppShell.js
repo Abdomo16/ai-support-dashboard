@@ -1,7 +1,7 @@
 import { esc, initials } from '../../lib/html.js';
 import { href } from '../../lib/router.js';
 import { themeButton } from '../../lib/theme.js';
-import { navGroups, routes } from '../../app/routes.js';
+import { navGroups, routeEnabled, routes } from '../../app/routes.js';
 import { can, isImpersonating, workspace } from '../../services/workspace.js';
 
 const createItems = [['conversations', 'newConversation'], ['customers', 'newCustomer'], ['bookings', 'newBooking'], ['knowledge', 'newArticle'], ['broadcasts', 'newBroadcast'], ['orders', 'newOrder']];
@@ -9,7 +9,8 @@ const createItems = [['conversations', 'newConversation'], ['customers', 'newCus
 export function appShell(t, { isArabic }) {
   const org = workspace.org;
   const brandName = org.brand_name || 'autexa';
-  const visible = Object.entries(routes).filter(([, def]) => !def.hidden && (!def.platformAdmin || workspace.isPlatformAdmin) && (!def.minRole || can(def.minRole)));
+  const visible = Object.entries(routes).filter(([key, def]) => !def.hidden && (!def.platformAdmin || workspace.isPlatformAdmin) && (!def.minRole || can(def.minRole))
+    && routeEnabled(key, def, org.features));
   const nav = navGroups.map((group) => {
     const items = visible.filter(([, def]) => def.group === group);
     if (!items.length) return '';

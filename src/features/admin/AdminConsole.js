@@ -4,13 +4,14 @@ import { formatDate, formatMoney, formatNumber, timeAgo } from '../../lib/format
 import { confirmDialog, emptyRow, loadingRow, openModal, toast, toastError } from '../../lib/ui.js';
 import { db, query } from '../../services/supabaseClient.js';
 import { workspace } from '../../services/workspace.js';
+import { openBasePrompt, openExtras } from './WorkspaceExtras.js';
 
 export function render({ t }) {
   if (!workspace.isPlatformAdmin) return emptyRow(t.forbidden);
   return `
     <div class="page-heading">
       <div><p class="eyebrow">${esc(t.platform)}</p><h1>${esc(t.adminConsole)}</h1><p>${esc(t.adminSubtitle)}</p></div>
-      <div class="heading-actions"><button class="ghost-btn" id="claim-data">${esc(t.claimLegacyData)}</button><button class="ghost-btn" id="export-tenants">⇩ ${esc(t.exportCsv)}</button></div>
+      <div class="heading-actions"><button class="ghost-btn" id="base-prompt">✦ ${esc(t.basePrompt)}</button><button class="ghost-btn" id="claim-data">${esc(t.claimLegacyData)}</button><button class="ghost-btn" id="export-tenants">⇩ ${esc(t.exportCsv)}</button></div>
     </div>
     <div class="metric-grid" id="platform-kpis">${loadingRow(t.loading)}</div>
     <article class="panel table-panel">
@@ -51,6 +52,7 @@ export async function mount(root, ctx) {
         <td>${esc(tenant.last_activity_at ? timeAgo(tenant.last_activity_at) : '—')}</td>
         <td class="row-actions">
           <button class="create small" data-impersonate>${esc(t.openWorkspace)}</button>
+          <button class="ghost-btn" data-extras>${esc(t.workspaceExtras)}</button>
           <button class="ghost-btn" data-agency>${esc(tenant.is_agency ? t.removeAgency : t.makeAgency)}</button>
           <button class="ghost-btn ${tenant.status === 'suspended' ? '' : 'danger-text'}" data-suspend>${esc(tenant.status === 'suspended' ? t.activate : t.suspend)}</button>
         </td>
@@ -93,6 +95,7 @@ export async function mount(root, ctx) {
         await ctx.rebootShell();
         return;
       }
+      if (button.matches('[data-extras]')) { await openExtras(t, tenant, load); return; }
       if (button.matches('[data-agency]')) { await db.rpc('admin_update_org', { p_org: tenant.id, p_is_agency: !tenant.is_agency }); load(); }
       if (button.matches('[data-suspend]')) {
         const suspend = tenant.status !== 'suspended';
@@ -106,6 +109,7 @@ export async function mount(root, ctx) {
     ['name', 'Workspace'], ['plan_id', 'Plan'], ['subscription_status', 'Subscription'], ['status', 'Status'], ['members', 'Members'], ['conversations', 'Conversations'],
     ['ai_messages', 'AI messages'], ['revenue_usd', 'Revenue USD'], ['ai_cost_usd', 'AI cost USD'], ['wa_cost_usd', 'WhatsApp cost USD'], ['margin_usd', 'Margin USD'], ['created_at', 'Created'],
   ])));
+  root.querySelector('#base-prompt').addEventListener('click', () => openBasePrompt(t));
   root.querySelector('#claim-data').addEventListener('click', () => openModal({
     title: t.claimLegacyData,
     html: `<p class="muted-text">${esc(t.claimLegacyDataHelp)}</p>`,
