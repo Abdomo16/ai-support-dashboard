@@ -1,65 +1,130 @@
-import { metrics, activity } from '../../mocks/dashboard.js';
+import { esc, initials, options } from '../../lib/html.js';
+import { href } from '../../lib/router.js';
+import { donut, lineChart } from '../../lib/charts.js';
+import { formatDateTime, formatDuration, formatNumber, percentChange, periodRange, timeAgo } from '../../lib/format.js';
+import { getActivityFeed, getAiHealth, getMetrics, getPeriodDays, getTrend, setPeriodDays } from '../../services/analytics.js';
 import { getUpcomingAppointments } from '../../services/appointments.js';
-import { getDashboardSummary } from '../../services/dashboardData.js';
+import { workspace } from '../../services/workspace.js';
 
-const metricIcons = ['◌', '✦', '↗', '◷'];
+export const periodSelect = (t, days) => `<select class="period" id="period-select">${options([[7, t.last7], [30, t.last30], [90, t.last90]], days)}</select>`;
 
-export function overview(t) {
-  return `<div class="page-heading"><div><p class="eyebrow">SATURDAY, SEPTEMBER 5</p><h1>${t.greeting}</h1><p>${t.subtitle}</p><small id="dashboard-data-source" class="source">Loading live Supabase data…</small></div><button class="period">${t.weekly} <span>⌄</span></button></div>
-  <div class="metric-grid">${metrics.map((m, i) => `<article class="metric-card"><div class="metric-top"><span class="metric-icon ${m.tone}">${metricIcons[i]}</span><span class="metric-change" data-change="${m.key}">${m.change}</span></div><strong data-metric="${m.key}">${m.value}</strong><p>${t[m.key]}</p><small>${t.previous}</small></article>`).join('')}</div>
-  <div class="dashboard-grid"><article class="panel chart-panel"><div class="panel-head"><div><h2>${t.volume}</h2><p id="chart-total">Loading live conversations…</p></div><button class="dots">•••</button></div><div class="chart"><div class="chart-labels"><span id="chart-max">—</span><span id="chart-mid">—</span><span>0</span></div><svg viewBox="0 0 700 205" preserveAspectRatio="none" aria-label="Conversation trend"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b7bff" stop-opacity=".42"/><stop offset="1" stop-color="#8b7bff" stop-opacity="0"/></linearGradient></defs><path id="chart-fill" fill="url(#fill)"/><path id="chart-line" fill="none" stroke="#9a8cff" stroke-width="3"/></svg><div class="chart-days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></div></article>
-  <article class="panel resolution"><div class="panel-head"><h2>${t.resolution}</h2><button class="dots">•••</button></div><div class="donut"><div><strong id="ai-rate">—</strong><span>AI</span></div></div><div class="legend"><span><i class="purple"></i>AI resolved <b id="ai-resolved-rate">—</b></span><span><i class="gray"></i>Human assisted <b id="human-assisted-rate">—</b></span></div></article></div>
-  <div class="bottom-grid"><article class="panel bookings"><div class="panel-head"><div><h2>${t.upcomingBookings}</h2><p id="booking-source" class="source">${t.dataPreview}</p></div><button class="link">${t.viewAll} →</button></div><div class="booking-table"><div class="booking-row booking-header"><span>${t.customer}</span><span>${t.service}</span><span>${t.time}</span><span>${t.status}</span></div><div id="booking-list"><div class="loading-row">Loading bookings…</div></div></div></article>
-  <article class="panel activity"><div class="panel-head"><h2>${t.activity}</h2><button class="dots">•••</button></div><div class="activity-list">${activity.map(([message, time, type]) => `<div class="activity-item"><span class="activity-dot ${type}"></span><div><strong>${message}</strong><small>${time}</small></div></div>`).join('')}</div><div class="health"><span class="health-icon">✓</span><div><strong>${t.health}</strong><small>${t.healthy}</small></div></div></article></div>`;
+export const dayLabel = (day, locale) => new Date(`${day}T00:00:00`).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en', { weekday: 'short', day: 'numeric' });
+
+function greeting(t) {
+  const hour = new Date().getHours();
+  const name = (workspace.profile?.full_name || '').split(' ')[0];
+  const base = hour < 12 ? t.goodMorning : hour < 18 ? t.goodAfternoon : t.goodEvening;
+  return name ? `${base}, ${name}` : base;
 }
 
-export async function loadBookings(root, t) {
-  const result = await getUpcomingAppointments();
-  const source = root.querySelector('#booking-source');
-  const list = root.querySelector('#booking-list');
-  if (!list || !source) return;
-  source.textContent = result.source === 'supabase' ? t.dataLive : t.dataPreview;
-  source.classList.toggle('live', result.source === 'supabase');
-  list.innerHTML = result.items.length ? result.items.map((item) => `<div class="booking-row"><span><i class="customer-avatar">${item.customer.slice(0, 1)}</i>${item.customer}</span><span>${item.service}</span><span>${item.when}</span><span><b class="status ${item.status}">${item.status}</b></span></div>`).join('') : '<div class="loading-row">No upcoming bookings.</div>';
+export function render({ t, locale }) {
+  const today = new Date().toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en', { weekday: 'long', month: 'long', day: 'numeric' });
+  const metricCards = [['conversations', '◌', 'mint'], ['aiResolved', '✦', 'violet'], ['handoffs', '↗', 'amber'], ['responseTime', '◷', 'blue']];
+  return `
+    ${workspace.org.onboarding_completed ? '' : `<a class="banner info setup-banner" href="#/onboarding"><strong>${esc(t.finishSetup)}</strong><span>${esc(t.finishSetupText)}</span><span>→</span></a>`}
+    <div class="page-heading">
+      <div><p class="eyebrow">${esc(today.toUpperCase())}</p><h1>${esc(greeting(t))}</h1><p>${esc(t.subtitle)}</p></div>
+      ${periodSelect(t, getPeriodDays())}
+    </div>
+    <div class="metric-grid">${metricCards.map(([key, icon, tone]) => `
+      <article class="metric-card"><div class="metric-top"><span class="metric-icon ${tone}">${icon}</span><span class="metric-change" data-change="${key}"></span></div>
+      <strong data-metric="${key}">—</strong><p>${esc(t[key])}</p><small>${esc(t.previous)}</small></article>`).join('')}
+    </div>
+    <div class="dashboard-grid">
+      <article class="panel chart-panel"><div class="panel-head"><div><h2>${esc(t.volume)}</h2><p id="chart-total">${esc(t.loading)}…</p></div><a class="link" href="#/analytics">${esc(t.analytics)} →</a></div><div id="trend-chart"></div></article>
+      <article class="panel resolution"><div class="panel-head"><h2>${esc(t.resolution)}</h2></div><div id="resolution-donut">${donut(0, 'AI')}</div>
+        <div class="legend"><span><i class="purple"></i>${esc(t.aiResolved)} <b id="ai-resolved-rate">—</b></span><span><i class="gray"></i>${esc(t.humanAssisted)} <b id="human-assisted-rate">—</b></span></div></article>
+    </div>
+    <div class="bottom-grid">
+      <article class="panel bookings"><div class="panel-head"><div><h2>${esc(t.upcomingBookings)}</h2></div><a class="link" href="#/bookings">${esc(t.viewAll)} →</a></div>
+        <div class="booking-table"><div class="booking-row booking-header"><span>${esc(t.customer)}</span><span>${esc(t.service)}</span><span>${esc(t.time)}</span><span>${esc(t.status)}</span></div><div id="booking-list"><div class="loading-row">${esc(t.loading)}…</div></div></div></article>
+      <article class="panel activity"><div class="panel-head"><h2>${esc(t.activity)}</h2></div><div class="activity-list" id="activity-list"><div class="loading-row">${esc(t.loading)}…</div></div><div id="health-panel"></div></article>
+    </div>`;
 }
 
-export async function loadDashboardSummary(root) {
-  const summary = await getDashboardSummary();
-  const setMetric = (key, value) => {
-    const element = root.querySelector(`[data-metric="${key}"]`);
-    if (element) element.textContent = value === null ? '—' : new Intl.NumberFormat().format(value);
-  };
-  setMetric('conversations', summary.conversations);
-  setMetric('aiResolved', summary.aiResolved);
-  setMetric('handoffs', summary.handoffs);
-  const source = root.querySelector('#dashboard-data-source');
-  if (source) {
-    source.textContent = summary.source === 'supabase' ? 'Live Supabase data' : 'Supabase data is unavailable';
-    source.classList.toggle('live', summary.source === 'supabase');
+export async function mount(root, ctx) {
+  const { t } = ctx;
+  root.querySelector('#period-select').addEventListener('change', (event) => { setPeriodDays(Number(event.target.value)); ctx.refresh(); });
+  await Promise.all([loadMetrics(root, ctx), loadBookings(root, t), loadActivity(root, t), loadHealth(root, t)]);
+}
+
+async function loadMetrics(root, { t, locale }) {
+  const period = periodRange(getPeriodDays());
+  try {
+    const [metrics, trend] = await Promise.all([getMetrics(period), getTrend(period)]);
+    const set = (key, value, current, previous, lowerIsBetter = false) => {
+      root.querySelector(`[data-metric="${key}"]`).textContent = value;
+      const change = percentChange(current, previous);
+      const badge = root.querySelector(`[data-change="${key}"]`);
+      if (change === null) { badge.textContent = ''; return; }
+      badge.textContent = `${change > 0 ? '+' : ''}${change}%`;
+      badge.classList.toggle('good', lowerIsBetter ? change <= 0 : change >= 0);
+    };
+    set('conversations', formatNumber(metrics.conversations), metrics.conversations, metrics.conversations_prev);
+    set('aiResolved', formatNumber(metrics.ai_resolved), metrics.ai_resolved, metrics.ai_resolved_prev);
+    set('handoffs', formatNumber(metrics.handoffs), metrics.handoffs, metrics.handoffs_prev, true);
+    set('responseTime', formatDuration(metrics.avg_response_seconds), metrics.avg_response_seconds, metrics.avg_response_seconds_prev, true);
+    const rate = metrics.conversations ? Math.round((metrics.ai_resolved / metrics.conversations) * 100) : 0;
+    root.querySelector('#resolution-donut').innerHTML = donut(rate, 'AI');
+    root.querySelector('#ai-resolved-rate').textContent = `${rate}%`;
+    root.querySelector('#human-assisted-rate').textContent = `${100 - rate}%`;
+    root.querySelector('#chart-total').textContent = `${formatNumber(metrics.conversations)} ${t.conversations.toLowerCase()}`;
+    root.querySelector('#trend-chart').innerHTML = lineChart([{ label: t.conversations, values: trend.map((day) => Number(day.total)) }], { labels: trend.map((day) => dayLabel(day.day, locale)) });
+  } catch (error) {
+    root.querySelector('#chart-total').textContent = `${t.dataUnavailable}: ${error.message}`;
   }
-  const total = summary.conversations || 0;
-  const rate = total ? Math.round((summary.aiResolved / total) * 100) : 0;
-  const chartTotal = root.querySelector('#chart-total');
-  if (chartTotal) chartTotal.textContent = summary.source === 'supabase' ? `${total} live conversations` : 'Live data unavailable';
-  root.querySelector('#ai-rate').textContent = `${rate}%`;
-  root.querySelector('#ai-resolved-rate').textContent = `${rate}%`;
-  root.querySelector('#human-assisted-rate').textContent = `${100 - rate}%`;
-  root.querySelector('.donut').style.background = `conic-gradient(var(--purple) 0 ${rate}%, #323747 ${rate}% 100%)`;
-  drawConversationTrend(root, summary.conversationDates);
 }
 
-function drawConversationTrend(root, dates) {
-  const today = new Date();
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(today); day.setHours(0, 0, 0, 0); day.setDate(day.getDate() - (6 - index)); return day;
-  });
-  const counts = days.map((day) => dates.filter((date) => {
-    const value = new Date(date); return value.getFullYear() === day.getFullYear() && value.getMonth() === day.getMonth() && value.getDate() === day.getDate();
-  }).length);
-  const max = Math.max(...counts, 1);
-  const points = counts.map((count, index) => `${index * (700 / 6)},${180 - (count / max) * 150}`);
-  root.querySelector('#chart-line').setAttribute('d', `M${points.join(' L')}`);
-  root.querySelector('#chart-fill').setAttribute('d', `M${points.join(' L')} L700,205 L0,205 Z`);
-  root.querySelector('#chart-max').textContent = max;
-  root.querySelector('#chart-mid').textContent = Math.ceil(max / 2);
+async function loadBookings(root, t) {
+  const list = root.querySelector('#booking-list');
+  try {
+    const items = await getUpcomingAppointments();
+    list.innerHTML = items.length ? items.map((item) => `
+      <a class="booking-row" href="${href('bookings', item.id)}"><span><i class="customer-avatar">${esc(initials(item.customer))}</i>${esc(item.customer)}</span><span>${esc(item.service)}</span><span>${esc(formatDateTime(item.startsAt))}</span><span><b class="status ${esc(item.status)}">${esc(t[`status_${item.status}`] || item.status)}</b></span></a>`).join('')
+      : `<div class="loading-row">${esc(t.noUpcomingBookings)}</div>`;
+  } catch (error) {
+    list.innerHTML = `<div class="loading-row">${esc(error.message)}</div>`;
+  }
+}
+
+const activityTone = { handoff_requested: 'warning', ai_resolved: 'success', resolved: 'success', booking_created: 'info', kb_ready: 'success', order_paid: 'success' };
+const activityLink = { handoff_requested: 'conversations', ai_resolved: 'conversations', resolved: 'conversations', booking_created: 'bookings', kb_ready: 'knowledge', order_paid: 'orders' };
+
+async function loadActivity(root, t) {
+  const list = root.querySelector('#activity-list');
+  try {
+    const items = await getActivityFeed(6);
+    list.innerHTML = items.length ? items.map((item) => `
+      <a class="activity-item" href="${href(activityLink[item.kind], item.kind === 'kb_ready' ? 'documents' : item.entity_id)}"><span class="activity-dot ${activityTone[item.kind] || 'info'}"></span>
+      <div><strong>${esc((t[`activity_${item.kind}`] || item.kind).replace('{name}', item.subject || t.customer))}</strong><small>${esc(timeAgo(item.created_at))}</small></div></a>`).join('')
+      : `<div class="loading-row">${esc(t.noActivity)}</div>`;
+  } catch (error) {
+    list.innerHTML = `<div class="loading-row">${esc(error.message)}</div>`;
+  }
+}
+
+export function healthPanel(t, health) {
+  const accounts = health.whatsapp || [];
+  const connected = accounts.some((account) => account.status === 'connected');
+  const errorRate = health.replies + health.errors ? Math.round((health.errors / (health.replies + health.errors)) * 100) : 0;
+  const lastWebhook = accounts.map((account) => account.last_webhook_at).filter(Boolean).sort().pop();
+  const problems = [];
+  if (!connected) problems.push(t.healthNoWhatsapp);
+  if (!health.is_live) problems.push(t.healthNotLive);
+  if (errorRate >= 10) problems.push(t.healthErrors.replace('{rate}', errorRate));
+  const ok = !problems.length;
+  return `
+    <div class="health ${ok ? '' : 'warn'}"><span class="health-icon">${ok ? '✓' : '!'}</span><div><strong>${esc(t.health)}</strong><small>${esc(ok ? t.healthy : problems.join(' · '))}</small></div></div>
+    <div class="health-stats">
+      <span><small>${esc(t.lastWebhook)}</small><b>${esc(lastWebhook ? timeAgo(lastWebhook) : '—')}</b></span>
+      <span><small>${esc(t.aiLatency)}</small><b>${health.avg_latency_ms ? `${formatNumber(health.avg_latency_ms)} ms` : '—'}</b></span>
+      <span><small>${esc(t.errorRate)}</small><b>${errorRate}%</b></span>
+      <span><small>${esc(t.tokens24h)}</small><b>${formatNumber(health.tokens || 0)}</b></span>
+    </div>`;
+}
+
+async function loadHealth(root, t) {
+  try {
+    root.querySelector('#health-panel').innerHTML = healthPanel(t, await getAiHealth());
+  } catch { /* health panel is optional */ }
 }

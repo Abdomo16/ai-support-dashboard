@@ -1,20 +1,14 @@
 import { query } from './supabaseClient.js';
-import { fallbackBookings } from '../mocks/dashboard.js';
+import { orgId } from './workspace.js';
 
-export async function getUpcomingAppointments() {
-  try {
-    const rows = await query('appointments', 'select=starts_at,status,customers(full_name),services(name)&order=starts_at.asc&limit=6');
-    return {
-      source: 'supabase',
-      items: rows.map((row) => ({
-        customer: row.customers?.full_name || 'Customer',
-        service: row.services?.name || 'Appointment',
-        when: new Date(row.starts_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }),
-        status: row.status || 'scheduled',
-      })),
-    };
-  } catch (error) {
-    console.info('Booking data is using the preview fallback:', error.message);
-    return { source: 'preview', items: fallbackBookings };
-  }
+export async function getUpcomingAppointments(limit = 6) {
+  const rows = await query('appointments', `select=id,starts_at,status,created_by_ai,customers(full_name,phone),services(name)&org_id=eq.${orgId()}&starts_at=gte.${new Date().toISOString()}&status=not.in.(cancelled,no_show)&order=starts_at.asc&limit=${limit}`);
+  return rows.map((row) => ({
+    id: row.id,
+    customer: row.customers?.full_name || row.customers?.phone || '',
+    service: row.services?.name || '',
+    startsAt: row.starts_at,
+    status: row.status || 'scheduled',
+    createdByAi: row.created_by_ai,
+  }));
 }
