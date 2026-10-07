@@ -33,7 +33,7 @@ export function mountAuth(root, t, { onSignedIn, onModeChange, onLocale }) {
   const mode = form.dataset.mode;
   const errorBox = form.querySelector('.form-error');
   const successBox = form.querySelector('.form-success');
-  root.querySelectorAll('[data-mode]').forEach((button) => button.addEventListener('click', () => onModeChange(button.dataset.mode)));
+  root.querySelectorAll('button[data-mode]').forEach((button) => button.addEventListener('click', () => onModeChange(button.dataset.mode)));
   root.querySelector('#google-signin')?.addEventListener('click', signInWithGoogle);
   root.querySelector('#language-toggle')?.addEventListener('click', onLocale);
   form.addEventListener('submit', async (event) => {
