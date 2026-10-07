@@ -69,18 +69,32 @@ export function signInWithGoogle() {
 
 // Magic links, OAuth and password recovery come back with tokens in the URL fragment.
 export async function consumeAuthRedirect() {
-  if (!location.hash.includes('access_token=')) return null;
-  const params = new URLSearchParams(location.hash.slice(1));
-  const accessTokenValue = params.get('access_token');
+  const hashParams = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+  const queryParams = new URLSearchParams(location.search);
+  const errorText = hashParams.get('error_description') || queryParams.get('error_description');
+  if (errorText) {
+    history.replaceState(null, '', `${location.pathname}#/signin`);
+    throw new Error(errorText.replace(/\+/g, ' '));
+  }
+  const tokenHash = queryParams.get('token_hash');
+  if (tokenHash) {
+    const type = queryParams.get('type') || 'magiclink';
+    const result = await authFetch('verify', { body: { token_hash: tokenHash, type } });
+    setSession(result);
+    history.replaceState(null, '', `${location.pathname}#/${type === 'recovery' ? 'reset-password' : 'overview'}`);
+    return type;
+  }
+  if (!hashParams.get('access_token')) return null;
+  const accessTokenValue = hashParams.get('access_token');
   const user = await authFetch('user', { method: 'GET', token: accessTokenValue });
   setSession({
     access_token: accessTokenValue,
-    refresh_token: params.get('refresh_token'),
-    expires_in: Number(params.get('expires_in') || 3600),
+    refresh_token: hashParams.get('refresh_token'),
+    expires_in: Number(hashParams.get('expires_in') || 3600),
     user,
   });
-  const type = params.get('type');
-  history.replaceState(null, '', `${location.pathname}${location.search}#/${type === 'recovery' ? 'reset-password' : 'overview'}`);
+  const type = hashParams.get('type');
+  history.replaceState(null, '', `${location.pathname}#/${type === 'recovery' ? 'reset-password' : 'overview'}`);
   return type;
 }
 
