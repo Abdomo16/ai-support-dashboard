@@ -4,7 +4,7 @@ import { formatDate, formatTime, timeAgo } from '../../lib/format.js';
 import { emptyRow, openModal, toast, toastError } from '../../lib/ui.js';
 import { subscribe } from '../../services/supabaseClient.js';
 import {
-  addNote, getConversation, getMessage, getMessages, handBackToAi, isWindowOpen, mediaUrls, requestInsights,
+  addNote, getConversation, getMessage, getMessages, handBackToAi, isWindowOpen, mediaUrls, replyRuleError, requestInsights,
   sendMessage, setFeedback, takeOver, updateConversation, uploadMedia,
 } from '../../services/conversations.js';
 import { createHandoff } from '../../services/handoffs.js';
@@ -123,7 +123,7 @@ export async function mountThread(container, ctx, id) {
     ${can('agent') ? `
     <form class="composer" id="composer">
       <div class="composer-tabs"><button type="button" class="active" data-mode="reply">${esc(t.reply)}</button><button type="button" data-mode="note">${esc(t.internalNote)}</button></div>
-      <div class="window-warning" id="window-warning" hidden>${esc(provider === 'waha' ? t.wahaReplyOnly : t.windowClosed)}</div>
+      <div class="window-warning" id="window-warning" hidden>${esc(provider === 'waha' ? t.wahaRule_never_messaged : t.windowClosed)}</div>
       <div class="canned-menu" id="canned-menu" hidden></div>
       <textarea id="composer-input" rows="3" placeholder="${esc(t.composerPlaceholder)}"></textarea>
       <div class="composer-actions">
@@ -275,7 +275,7 @@ export async function mountThread(container, ctx, id) {
           const [note] = await addNote(id, text);
           await upsertMessage({ ...note, agent: { full_name: workspace.profile?.full_name } });
         } else {
-          if (!isWindowOpen(conversation)) throw new Error(provider === 'waha' ? t.wahaReplyOnly : t.windowClosed);
+          if (!isWindowOpen(conversation, provider)) throw new Error(provider === 'waha' ? t.wahaRule_never_messaged : t.windowClosed);
           const mediaPath = file ? await uploadMedia(id, file) : undefined;
           const result = await sendMessage({ conversation_id: id, text, media_path: mediaPath, media_mime: file?.type });
           if (result?.message) await upsertMessage({ ...result.message, agent: { full_name: workspace.profile?.full_name } });
@@ -285,7 +285,7 @@ export async function mountThread(container, ctx, id) {
         fileInput.value = '';
         attachmentName.textContent = '';
       } catch (error) {
-        toastError(error);
+        toastError(replyRuleError(error, t));
       } finally {
         submit.disabled = false;
       }

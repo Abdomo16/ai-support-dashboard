@@ -3,7 +3,7 @@ import { href } from '../../lib/router.js';
 import { timeAgo } from '../../lib/format.js';
 import { emptyRow, loadingRow, openModal, toastError, wireTabs } from '../../lib/ui.js';
 import { subscribe } from '../../services/supabaseClient.js';
-import { listConversations, sendMessage, startConversation } from '../../services/conversations.js';
+import { listConversations, replyRuleError, sendMessage, startConversation } from '../../services/conversations.js';
 import { listCustomers } from '../../services/customers.js';
 import { whatsappProvider } from '../../services/integrations.js';
 import { getTemplates } from '../../services/templates.js';
@@ -114,7 +114,8 @@ export async function create(ctx) {
     onSubmit: async (values) => {
       if (!values.customer_id && !values.phone) throw new Error(t.phoneRequired);
       if (provider === 'waha') {
-        const started = await startConversation({ customer_id: values.customer_id || undefined, phone: values.phone, text: values.text }, t.wahaReplyOnly);
+        const started = await startConversation({ customer_id: values.customer_id || undefined, phone: values.phone, text: values.text }, t.wahaRule_never_messaged)
+          .catch((error) => { throw replyRuleError(error, t); });
         ctx.navigate('conversations', started.conversation_id);
         return;
       }
