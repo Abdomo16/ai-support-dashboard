@@ -234,6 +234,10 @@ export default {
   conversationsThisMonth: 'المحادثات (الشهر)', agency: 'وكالة', clientOf: 'عميل لدى', suspended: 'موقوفة', activate: 'تفعيل', suspend: 'إيقاف',
   suspendConfirm: 'إيقاف «{name}»؟ سيتوقف المساعد عن الرد ولن يتمكن الفريق من إرسال الرسائل.', makeAgency: 'تحويلها إلى وكالة', removeAgency: 'إلغاء الوكالة', openWorkspace: 'فتح',
   noTenants: 'لا توجد مساحات عمل مطابقة.', lastActivity: 'آخر نشاط',
+  newCustomerWorkspace: 'مساحة عمل جديدة لعميل', ownerEmail: 'بريد المالك (اختياري)',
+  newCustomerWorkspaceHelp: 'تُنشأ مساحة العمل على الباقة المجانية غير المحدودة افتراضيًا، بدون فوترة أو حدود. يصل للمالك بريد دعوة، ويمكنك أيضًا فتح المساحة وإعدادها بنفسك.',
+  workspaceCreatedInvited: 'تم إنشاء مساحة العمل ودعوة المالك', workspaceCreatedInviteFailed: 'تم إنشاء مساحة العمل لكن فشلت الدعوة:',
+  complimentaryPlanHelp: 'مساحة العمل هذه على باقة مجانية غير محدودة من Autexa. لا يوجد ما تدفعه ولا حدود للاستخدام.',
 
   // Onboarding
   gettingStarted: 'البداية', onboardingTitle: 'لنُطلق {name}', onboardingSubtitle: 'خمس خطوات سريعة ويبدأ مساعدك بالرد على العملاء في واتساب.',

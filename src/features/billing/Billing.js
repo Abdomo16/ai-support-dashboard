@@ -48,7 +48,8 @@ export async function mount(root, ctx) {
       </div>
       <strong class="plan-price">${esc(formatMoney(plan.price_monthly || 0, plan.currency || 'USD'))}<small>/${esc(t.month)}</small></strong>
     </div>
-    ${subscription.status === 'past_due' ? `<p class="banner warning">${esc(t.pastDueHelp)}</p>` : ''}`;
+    ${subscription.status === 'past_due' ? `<p class="banner warning">${esc(t.pastDueHelp)}</p>` : ''}
+    ${plan.id === 'unlimited' ? `<p class="muted-text">${esc(t.complimentaryPlanHelp)}</p>` : ''}`;
 
   root.querySelector('#usage').innerHTML = usageMeters(summary).map((meter) => {
     const percent = Math.min(100, Math.round(meter.ratio * 100));
@@ -60,6 +61,12 @@ export async function mount(root, ctx) {
     </article>`;
   }).join('');
 
+  if (plan.id === 'unlimited') {
+    root.querySelector('#billing-portal')?.remove();
+    root.querySelector('#plans').previousElementSibling.remove();
+    root.querySelector('#plans').remove();
+    return;
+  }
   root.querySelector('#plans').innerHTML = plans.map((item) => {
     const current = item.id === plan.id;
     const limits = item.limits || {};

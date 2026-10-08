@@ -2,8 +2,9 @@ import { esc, options } from '../../lib/html.js';
 import { download, toCsv } from '../../lib/csv.js';
 import { formatDate, formatMoney, formatNumber, timeAgo } from '../../lib/format.js';
 import { confirmDialog, emptyRow, loadingRow, openModal, toast, toastError } from '../../lib/ui.js';
-import { db, query } from '../../services/supabaseClient.js';
+import { db, invokeFunction, query } from '../../services/supabaseClient.js';
 import { workspace } from '../../services/workspace.js';
+import { industries } from '../onboarding/CreateWorkspace.js';
 import { openBasePrompt, openExtras } from './WorkspaceExtras.js';
 
 export function render({ t }) {
@@ -11,7 +12,7 @@ export function render({ t }) {
   return `
     <div class="page-heading">
       <div><p class="eyebrow">${esc(t.platform)}</p><h1>${esc(t.adminConsole)}</h1><p>${esc(t.adminSubtitle)}</p></div>
-      <div class="heading-actions"><button class="ghost-btn" id="base-prompt">✦ ${esc(t.basePrompt)}</button><button class="ghost-btn" id="claim-data">${esc(t.claimLegacyData)}</button><button class="ghost-btn" id="export-tenants">⇩ ${esc(t.exportCsv)}</button></div>
+      <div class="heading-actions"><button class="create" id="new-workspace">＋ ${esc(t.newCustomerWorkspace)}</button><button class="ghost-btn" id="base-prompt">✦ ${esc(t.basePrompt)}</button><button class="ghost-btn" id="claim-data">${esc(t.claimLegacyData)}</button><button class="ghost-btn" id="export-tenants">⇩ ${esc(t.exportCsv)}</button></div>
     </div>
     <div class="metric-grid" id="platform-kpis">${loadingRow(t.loading)}</div>
     <article class="panel table-panel">
@@ -109,6 +110,33 @@ export async function mount(root, ctx) {
     ['name', 'Workspace'], ['plan_id', 'Plan'], ['subscription_status', 'Subscription'], ['status', 'Status'], ['members', 'Members'], ['conversations', 'Conversations'],
     ['ai_messages', 'AI messages'], ['revenue_usd', 'Revenue USD'], ['ai_cost_usd', 'AI cost USD'], ['wa_cost_usd', 'WhatsApp cost USD'], ['margin_usd', 'Margin USD'], ['created_at', 'Created'],
   ])));
+  root.querySelector('#new-workspace').addEventListener('click', () => openModal({
+    title: t.newCustomerWorkspace,
+    html: `<p class="muted-text">${esc(t.newCustomerWorkspaceHelp)}</p>`,
+    fields: [
+      { name: 'name', label: t.businessName, required: true, full: true },
+      { name: 'email', label: t.ownerEmail, type: 'email', full: true },
+      { name: 'plan', label: t.plan, type: 'select', value: 'unlimited', options: plans.map((plan) => [plan.id, plan.name]) },
+      { name: 'industry', label: t.industry, type: 'select', value: 'services', options: industries.map((key) => [key, t[`industry_${key}`] || key]) },
+      { name: 'timezone', label: t.timezone, value: 'Africa/Cairo', required: true },
+      { name: 'locale', label: t.customerLanguage, type: 'select', value: 'ar', options: [['ar', 'العربية'], ['en', 'English']] },
+    ],
+    submitLabel: t.createWorkspace,
+    onSubmit: async (values) => {
+      const id = await db.rpc('admin_create_workspace', { p_name: values.name, p_plan: values.plan, p_industry: values.industry, p_timezone: values.timezone, p_locale: values.locale });
+      if (values.email) {
+        try {
+          await invokeFunction('invite-member', { org_id: id, email: values.email, role: 'owner', redirect_to: `${location.origin}${location.pathname}` });
+        } catch (error) {
+          toast(`${t.workspaceCreatedInviteFailed} ${error.message}`, 'error');
+          load();
+          return;
+        }
+      }
+      toast(values.email ? t.workspaceCreatedInvited : t.saved, 'success');
+      load();
+    },
+  }));
   root.querySelector('#base-prompt').addEventListener('click', () => openBasePrompt(t));
   root.querySelector('#claim-data').addEventListener('click', () => openModal({
     title: t.claimLegacyData,

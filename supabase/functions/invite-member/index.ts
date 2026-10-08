@@ -18,8 +18,9 @@ serve(async (request) => {
     admin.from('subscriptions').select('plans(limits)').eq('org_id', body.org_id).maybeSingle(),
     admin.from('organizations').select('name, brand_name').eq('id', body.org_id).single(),
   ]);
-  const seats = Number((sub?.plans as { limits?: { seats?: number } } | null)?.limits?.seats ?? 2);
-  if ((members || 0) + (pending || 0) >= seats) throw new HttpError(402, `Your plan includes ${seats} seats. Upgrade to invite more teammates.`);
+  const limits = (sub?.plans as { limits?: { seats?: number } } | null)?.limits;
+  const seats = Number(limits ? limits.seats ?? 0 : 2);
+  if (seats && (members || 0) + (pending || 0) >= seats) throw new HttpError(402, `Your plan includes ${seats} seats. Upgrade to invite more teammates.`);
 
   must(await admin.from('org_invitations').upsert({ org_id: body.org_id, email, role: body.role, invited_by: user.id, accepted_at: null }, { onConflict: 'org_id,email' }));
 

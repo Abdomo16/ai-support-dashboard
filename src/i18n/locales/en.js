@@ -234,6 +234,10 @@ export default {
   conversationsThisMonth: 'Conversations (month)', agency: 'Agency', clientOf: 'Client of', suspended: 'Suspended', activate: 'Activate', suspend: 'Suspend',
   suspendConfirm: 'Suspend “{name}”? Their AI stops replying and the team cannot send messages.', makeAgency: 'Make agency', removeAgency: 'Remove agency', openWorkspace: 'Open',
   noTenants: 'No workspaces match.', lastActivity: 'Last activity',
+  newCustomerWorkspace: 'New customer workspace', ownerEmail: 'Owner email (optional)',
+  newCustomerWorkspaceHelp: 'Creates a workspace on the free Unlimited plan by default, with no billing or limits. The owner gets an email invite; you can also open the workspace and set it up yourself.',
+  workspaceCreatedInvited: 'Workspace created and owner invited', workspaceCreatedInviteFailed: 'Workspace created, but the invite failed:',
+  complimentaryPlanHelp: 'This workspace is on a free Unlimited plan from Autexa. There is nothing to pay and no usage limits.',
 
   // Onboarding
   gettingStarted: 'GETTING STARTED', onboardingTitle: 'Let’s get {name} live', onboardingSubtitle: 'Five quick steps and your AI starts answering customers on WhatsApp.',

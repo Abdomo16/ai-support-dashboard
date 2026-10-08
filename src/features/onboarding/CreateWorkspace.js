@@ -1,7 +1,7 @@
 import { esc, options } from '../../lib/html.js';
 import { createOrganization } from '../../services/workspace.js';
 
-const industries = ['clinic', 'salon', 'restaurant', 'retail', 'ecommerce', 'real_estate', 'education', 'services', 'other'];
+export const industries = ['clinic', 'salon', 'restaurant', 'retail', 'ecommerce', 'real_estate', 'education', 'services', 'other'];
 
 export function renderCreateWorkspace(t) {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
