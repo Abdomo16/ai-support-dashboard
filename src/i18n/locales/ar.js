@@ -62,6 +62,7 @@ export default {
   attach: 'إرفاق', sendTemplate: 'إرسال قالب', template: 'القالب', chooseTemplate: 'اختر قالبًا', templateVariables: 'متغيرات القالب',
   templateVariablesHint: 'قيم {{1}} و{{2}}… مفصولة بفواصل', templateRequiredHint: 'يجب أن تبدأ المحادثات الجديدة بقالب معتمد.',
   noApprovedTemplates: 'لا توجد قوالب معتمدة بعد — أنشئ واحدًا من الحملات ← القوالب.', windowClosed: 'نافذة واتساب (24 ساعة) مغلقة. أرسل قالبًا معتمدًا لاستئناف المحادثة.',
+  wahaReplyOnly: 'لحماية الرقم من حظر واتساب، يمكنك الرد فقط على العملاء الذين راسلوك خلال آخر 24 ساعة. انتظر حتى يراسلك العميل أولًا.',
   phoneHint: 'مع رمز الدولة، مثل ‎+9665…', phoneRequired: 'رقم الهاتف مطلوب', existingCustomer: 'عميل حالي', newContact: 'جهة اتصال جديدة',
   typing: 'يكتب', summary: 'الملخص', noSummary: 'لا يوجد ملخص بعد.', generateSummary: 'إنشاء ملخص', refreshSummary: 'تحديث', intent: 'النية', sentiment: 'المشاعر',
   sentiment_positive: 'إيجابي', sentiment_neutral: 'محايد', sentiment_negative: 'سلبي', confidence: 'الثقة',

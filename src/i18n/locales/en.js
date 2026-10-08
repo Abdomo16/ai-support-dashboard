@@ -62,6 +62,7 @@ export default {
   attach: 'Attach', sendTemplate: 'Send template', template: 'Template', chooseTemplate: 'Choose a template', templateVariables: 'Template variables',
   templateVariablesHint: 'Values for {{1}}, {{2}}… separated by commas', templateRequiredHint: 'New conversations must start with an approved template.',
   noApprovedTemplates: 'No approved templates yet — create one in Broadcasts → Templates.', windowClosed: 'The 24-hour WhatsApp window is closed. Send an approved template to restart the conversation.',
+  wahaReplyOnly: 'To protect this number from WhatsApp bans, you can only reply to customers who messaged in the last 24 hours. Wait for the customer to write first.',
   phoneHint: 'With country code, e.g. +9665…', phoneRequired: 'A phone number is required', existingCustomer: 'Existing customer', newContact: 'New contact',
   typing: 'Typing', summary: 'Summary', noSummary: 'No summary yet.', generateSummary: 'Generate summary', refreshSummary: 'Refresh', intent: 'Intent', sentiment: 'Sentiment',
   sentiment_positive: 'Positive', sentiment_neutral: 'Neutral', sentiment_negative: 'Negative', confidence: 'Confidence',

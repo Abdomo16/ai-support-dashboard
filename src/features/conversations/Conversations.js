@@ -114,7 +114,7 @@ export async function create(ctx) {
     onSubmit: async (values) => {
       if (!values.customer_id && !values.phone) throw new Error(t.phoneRequired);
       if (provider === 'waha') {
-        const started = await startConversation({ customer_id: values.customer_id || undefined, phone: values.phone, name: values.name, text: values.text });
+        const started = await startConversation({ customer_id: values.customer_id || undefined, phone: values.phone, text: values.text }, t.wahaReplyOnly);
         ctx.navigate('conversations', started.conversation_id);
         return;
       }
